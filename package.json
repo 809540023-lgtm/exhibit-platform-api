@@ -1,0 +1,24 @@
+{
+  "name": "exhibit-platform-backend",
+  "version": "2.0.0",
+  "description": "展覽現場資料蒐集與採購媒合平台 — 後端(身份驗證 + 伺服器端欄位過濾)",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/leak_test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.11.5"
+  },
+  "devDependencies": {
+    "pg-mem": "^3.0.14"
+  }
+}

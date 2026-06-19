@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>展覽現場資料蒐集與採購媒合平台 | Expo Data & Sourcing Platform</title>
+<style>
+  :root{--cherry:#990011;--navy:#2f3c7e;--gold:#caa54a;--ink:#222;--mute:#777;--line:#e6e0de;--bg:#faf6f5;--card:#fff;--ok:#1f8a4c;--no:#b03030;--cond:#b8860b}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"PingFang TC","Microsoft JhengHei","Hiragino Sans",sans-serif;color:var(--ink);background:var(--bg);line-height:1.6}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+  header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50}
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:60px;flex-wrap:wrap;padding:8px 0}
+  .logo{font-weight:800;font-size:16px;color:var(--cherry)}.logo small{display:block;font-size:11px;color:var(--mute);font-weight:400}
+  .right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .langsw{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .langsw button{border:none;background:#fff;padding:6px 11px;font-size:12.5px;cursor:pointer;color:var(--mute);border-right:1px solid var(--line)}
+  .langsw button:last-child{border-right:none}.langsw button.on{background:var(--cherry);color:#fff;font-weight:700}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:8px;margin:2px 3px 0 0}
+  .pill.tw{background:#e2f0e6;color:#1f8a4c}.pill.cn{background:#fde8e8;color:#b03030}.pill.lv{background:#eef0fb;color:var(--navy)}.pill.warn{background:#fff3d6;color:#b8860b}
+  .badge{font-size:12px;padding:4px 10px;border-radius:20px;font-weight:700}
+  .badge.ok{background:#e2f0e6;color:var(--ok)}.badge.no{background:#fde8e8;color:var(--no)}.badge.cond{background:#fff3d6;color:var(--cond)}
+  .rolepill{font-size:12px;padding:5px 12px;border-radius:20px;background:#f2dede;color:var(--cherry);font-weight:700}
+  .btn{display:inline-block;background:var(--cherry);color:#fff;border:none;padding:9px 16px;border-radius:9px;font-size:14px;cursor:pointer;font-weight:700}
+  .btn.ghost{background:#fff;color:var(--cherry);border:1px solid var(--cherry)}.btn.navy{background:var(--navy)}.btn.sm{padding:5px 11px;font-size:12px}
+  .hero{padding:38px 0 18px;text-align:center}.hero h1{font-size:26px;color:var(--cherry)}.hero .sub{color:var(--mute);font-size:13.5px;margin-top:6px;max-width:720px;margin-left:auto;margin-right:auto}
+  .exh{display:inline-block;margin:14px auto 0;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 20px;font-size:13px}.exh b{color:var(--navy)}
+  .grid4{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin:26px 0 40px}
+  .entry{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;cursor:pointer;transition:.15s;border-top:5px solid var(--cherry)}
+  .entry:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,.10)}
+  .entry .ic{font-size:30px;margin-bottom:8px}.entry h3{font-size:18px;margin-bottom:4px}.entry p{font-size:13px;color:var(--mute);margin-bottom:8px}
+  .view{display:none}.view.active{display:block;animation:fade .2s}@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+  .portalhead{padding:22px 0 8px}.portalhead h2{font-size:21px}.crumbs{font-size:12px;color:var(--mute);margin:14px 0 0}.crumbs span{color:var(--cherry);cursor:pointer}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0}
+  .card h4{font-size:15px;color:var(--cherry);margin-bottom:10px;border-bottom:2px solid #f2dede;padding-bottom:6px}
+  .note{background:#eef0fb;border-left:3px solid var(--navy);padding:10px 12px;font-size:12.5px;color:#3a3a5a;border-radius:0 8px 8px 0;margin:10px 0}
+  .anote{background:#f4f2fb;border-left:3px solid var(--navy);color:#4a4a6a;border-radius:0 8px 8px 0;padding:8px 12px;font-size:12px;margin-top:8px}
+  .plist{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+  .pcard{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  .pcard .ph{height:88px;display:flex;align-items:center;justify-content:center;font-size:42px;background:#f7f1f0}.pcard .pb{padding:12px}
+  .pcard h5{font-size:14px;margin-bottom:4px}.pcard .meta{font-size:12px;color:var(--mute)}.pcard .price{color:var(--cherry);font-weight:700;font-size:13px;margin-top:6px}.stars{color:var(--gold);font-size:13px}
+  form.auth{max-width:380px;margin:10px 0}
+  form.auth label{display:block;font-size:13px;margin-bottom:10px}
+  form.auth input,form.auth select{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:14px;margin-top:3px;font-family:inherit}
+  .msg{font-size:13px;padding:8px 12px;border-radius:8px;margin:8px 0}.msg.err{background:#fde8e8;color:var(--no)}.msg.ok{background:#e2f0e6;color:var(--ok)}
+  table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}th{background:#f6efee;font-weight:700}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.tabs button{border:1px solid var(--line);background:#fff;padding:7px 13px;border-radius:9px;cursor:pointer;font-size:13px}.tabs button.on{background:var(--cherry);color:#fff;border-color:var(--cherry)}
+  .yes{color:var(--ok);font-weight:700}.non{color:var(--no)}
+  footer{text-align:center;color:var(--mute);font-size:12px;padding:24px 0 40px;border-top:1px solid var(--line);margin-top:24px}
+  @media(max-width:680px){.grid4{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="wrap bar">
+  <div class="logo" id="logo"></div>
+  <div class="right"><div class="langsw" id="langsw"></div><div id="rolebox"></div></div>
+</div></header>
+<div class="wrap">
+  <section id="v-home" class="view active"></section>
+  <section id="v-exhibitor" class="view"></section>
+  <section id="v-buyer" class="view"></section>
+  <section id="v-consumer" class="view"></section>
+  <section id="v-admin" class="view"></section>
+</div>
+<footer><div class="wrap" id="foot"></div></footer>
+
+<script src="i18n.js"></script>
+<script>
+const API = ''; // 同源
+let LANG = localStorage.getItem('expoLang') || 'tc';
+let VIEW = 'home';
+let TOKEN = localStorage.getItem('expoToken') || null;
+let USER = null;
+const t = o => (o && o[LANG] !== undefined) ? o[LANG] : (o||'');
+const $ = id => document.getElementById(id);
+const stars = n => '★'.repeat(n||0)+'☆'.repeat(5-(n||0));
+
+async function api(path, opts={}) {
+  const h = Object.assign({ 'content-type':'application/json' }, opts.headers||{});
+  if (TOKEN) h.authorization = 'Bearer ' + TOKEN;
+  const r = await fetch(API+path, Object.assign({}, opts, { headers:h }));
+  let j=null; try{ j=await r.json(); }catch{}
+  return { status:r.status, body:j };
+}
+function setLang(l){ LANG=l; localStorage.setItem('expoLang',l); render(); }
+function go(v){ VIEW=v; render(); location.hash=v; window.scrollTo(0,0); }
+function logout(){ TOKEN=null; USER=null; localStorage.removeItem('expoToken'); go('home'); }
+
+function header(){
+  $('logo').innerHTML = `${t(I18N.brand)}<small>${I18N.brandSub}</small>`;
+  $('langsw').innerHTML = ['tc','sc','ja','en'].map(l=>`<button class="${l===LANG?'on':''}" onclick="setLang('${l}')">${I18N.langNames[l]}</button>`).join('');
+  const rb=$('rolebox');
+  if(USER){ rb.innerHTML=`<span class="rolepill">${USER.role} ${USER.client_id?('·'+USER.client_id):''}</span> <button class="btn ghost sm" onclick="logout()">${t(I18N.logout)}</button>`; }
+  else if(VIEW!=='home'){ rb.innerHTML=`<button class="btn ghost sm" onclick="go('home')">${t(I18N.back)}</button>`; }
+  else rb.innerHTML='';
+  $('foot').innerHTML = `${I18N.brandSub}　|　Phase ② · 後端權限隔離已啟用 · v2`;
+}
+
+async function renderHome(){
+  let ex=''; try{ const r=await api('/api/exhibition'); if(r.body) ex=`<div class="exh"><b>${t(r.body.name)}</b><br>${r.body.date} ｜ ${t(r.body.venue)} ｜ ${r.body.organizer} ｜ ${t(r.body.scale)}</div>`; }catch{}
+  const cards=I18N.entries.map(e=>`<div class="entry ${e.cls}" onclick="go('${e.id}')">
+    <div class="ic">${e.ic}</div><h3>${t(e.title)}</h3><p>${t(e.desc)}</p>
+    <span class="badge ${e.auth?'cond':'ok'}">${e.auth?t(I18N.loginBadge):t(I18N.anonBadge)}</span></div>`).join('');
+  $('v-home').innerHTML=`<div class="hero"><h1>${t(I18N.chooseTitle)}</h1><div class="sub">${t(I18N.chooseSub)}</div>${ex}</div><div class="grid4">${cards}</div>`;
+}
+
+function authForm(role){
+  const isBuyer = role==='buyer';
+  return `<div class="card"><h4>${t(I18N.login)} / ${t(I18N.register)}</h4>
+    <div id="authMsg"></div>
+    <form class="auth" onsubmit="return doLogin(event)">
+      <label>${t(I18N.email)}<input id="le" type="email" required></label>
+      <label>${t(I18N.password)}<input id="lp" type="password" required></label>
+      <button class="btn" type="submit">${t(I18N.login)}</button>
+    </form>
+    <details style="margin-top:8px"><summary style="cursor:pointer;font-size:13px;color:var(--navy)">${t(I18N.register)}</summary>
+      <form class="auth" onsubmit="return doRegister(event,'${role}')" style="margin-top:10px">
+        <label>${t(I18N.email)}<input id="re" type="email" required></label>
+        <label>${t(I18N.password)}<input id="rp" type="password" minlength="8" required></label>
+        ${isBuyer?`<label>${t(I18N.clientCode)}<input id="rc" placeholder="A / B / C"></label>`:''}
+        <button class="btn navy" type="submit">${t(I18N.register)}</button>
+      </form></details></div>`;
+}
+async function doLogin(e){ e.preventDefault();
+  const r=await api('/api/auth/login',{method:'POST',body:JSON.stringify({email:le.value,password:lp.value})});
+  const m=$('authMsg');
+  if(r.status===200){ TOKEN=r.body.token; USER=r.body.user; localStorage.setItem('expoToken',TOKEN);
+    if(USER.role==='admin')go('admin'); else if(USER.role==='buyer')go('buyer'); else go('exhibitor'); }
+  else if(r.status===403){ m.innerHTML=`<div class="msg err">${t(I18N.notApproved)}</div>`; }
+  else { m.innerHTML=`<div class="msg err">${t(I18N.badCred)}</div>`; }
+  return false;
+}
+async function doRegister(e,role){ e.preventDefault();
+  const body={email:re.value,password:rp.value,role,lang:LANG};
+  if(role==='buyer'&&document.getElementById('rc'))body.client_id=(rc.value||'').trim().toUpperCase()||null;
+  const r=await api('/api/auth/register',{method:'POST',body:JSON.stringify(body)});
+  const m=$('authMsg');
+  m.innerHTML = r.status===200 ? `<div class="msg ok">${t(I18N.pendingMsg)}</div>` : `<div class="msg err">${(r.body&&r.body.error)||'error'}</div>`;
+  return false;
+}
+
+async function renderConsumer(){
+  const r=await api('/api/products'); // 匿名 L1
+  const cards=(r.body||[]).map(p=>{const c=p.consumer;return `<div class="pcard"><div class="ph">${c.image}</div><div class="pb">
+    <h5>${t(p.name)}</h5><div class="meta">${t(c.origin)}</div>
+    <div style="font-size:12px;margin-top:6px">${t(c.story)}</div>
+    <div style="font-size:12px;color:var(--mute);margin-top:4px">${t(I18N.feature)}${t(c.feature)}</div>
+    <div class="price">${t(c.price)}</div></div></div>`;}).join('');
+  $('v-consumer').innerHTML=`<div class="crumbs"><span onclick="go('home')">${t(I18N.back)}</span> / 🛍️</div>
+    <div class="portalhead"><h2>🛍️ ${t(I18N.entries[2].title)}</h2></div>
+    <div class="note">${t(I18N.consumerNote)}</div><div class="plist">${cards}</div>`;
+}
+
+async function renderBuyer(){
+  if(!USER||USER.role!=='buyer'){ $('v-buyer').innerHTML=`<div class="crumbs"><span onclick="go('home')">${t(I18N.back)}</span> / 📋</div><div class="portalhead"><h2>📋 ${t(I18N.entries[1].title)}</h2></div>${authForm('buyer')}`; return; }
+  const r=await api('/api/buyer/products');
+  const cards=(r.body||[]).map(p=>{const c=p.consumer,d=p.b2b;return `<div class="pcard"><div class="ph">${c.image}</div><div class="pb">
+    <h5>${t(p.name)}</h5><div class="stars">${stars(d.recommend)}</div>
+    <div style="font-size:12px;margin-top:6px">
+      <div>${t(I18N.moq)}:<b>${t(d.moq)}</b></div>
+      <div>${t(I18N.wholesale)}:<b style="color:var(--cherry)">${t(d.wholesale)}</b></div>
+      <div>${t(I18N.exportL)}:${t(d.exportT)}</div><div>${t(I18N.oem)}:${t(d.oem)}</div></div>
+    <div style="margin-top:6px">${d.fit_tw?`<span class="pill tw">${t(I18N.fitTw)}</span>`:''}${d.fit_cn?`<span class="pill cn">${t(I18N.fitCn)}</span>`:''}</div>
+    <div class="anote">${t(I18N.adminNote)}${t(d.adminNote)}</div></div></div>`;}).join('') || `<p style="color:var(--mute);font-size:13px">—</p>`;
+  $('v-buyer').innerHTML=`<div class="crumbs"><span onclick="go('home')">${t(I18N.back)}</span> / 📋</div>
+    <div class="portalhead"><h2>📋 ${t(I18N.entries[1].title)} · ${USER.client_id||'-'}</h2></div>
+    <div class="plist">${cards}</div>`;
+}
+
+async function renderExhibitor(){
+  if(!USER||USER.role!=='exhibitor'){ $('v-exhibitor').innerHTML=`<div class="crumbs"><span onclick="go('home')">${t(I18N.back)}</span> / 🏭</div><div class="portalhead"><h2>🏭 ${t(I18N.entries[0].title)}</h2></div>${authForm('exhibitor')}`; return; }
+  $('v-exhibitor').innerHTML=`<div class="crumbs"><span onclick="go('home')">${t(I18N.back)}</span> / 🏭</div>
+    <div class="portalhead"><h2>🏭 ${t(I18N.entries[0].title)}</h2></div><div class="note">${t(I18N.exhibitorNote)}</div>`;
+}
+
+let adminTab='products';
+async function renderAdmin(){
+  if(!USER||USER.role!=='admin'){ $('v-admin').innerHTML=`<div class="crumbs"><span onclick="go('home')">${t(I18N.back)}</span> / 🛠️</div><div class="portalhead"><h2>🛠️ ${t(I18N.entries[3].title)}</h2></div>${authForm('admin-x')}`;
+    // 管理人也用同一登入表單(註冊區塊不適用,但登入可用)
+    return; }
+  const tabs=[['products',I18N.tabProducts],['users',I18N.tabUsers],['audit',I18N.tabAudit]];
+  let body='';
+  if(adminTab==='products'){
+    const r=await api('/api/admin/products');
+    body=`<table><thead><tr><th>${t(I18N.entries[0].title)}</th><th>${t(I18N.wholesale)}</th><th>${t(I18N.internal)}</th><th>${t(I18N.grantedTo)}</th></tr></thead><tbody>`+
+      (r.body||[]).map(p=>`<tr><td>${t(p.name)}${p.reviewed?'':' <span class="pill warn">○</span>'}</td>
+        <td>${t(p.b2b.wholesale)}</td>
+        <td><div class="anote">${t(p.admin.verbal)}｜${t(p.admin.risk)}｜興趣:${(p.admin.interested||[]).join(',')}</div></td>
+        <td>${(p.grantedTo||[]).map(c=>`<span class="pill lv">${c}</span>`).join('')}</td></tr>`).join('')+`</tbody></table>`;
+  } else if(adminTab==='users'){
+    const r=await api('/api/admin/users');
+    body=`<table><thead><tr><th>${t(I18N.email)}</th><th>${t(I18N.role)}</th><th>client</th><th>${t(I18N.status)}</th><th></th></tr></thead><tbody>`+
+      (r.body||[]).map(u=>`<tr><td>${u.email}</td><td>${u.role}</td><td>${u.client_id||'-'}</td>
+        <td><span class="badge ${u.status==='approved'?'ok':u.status==='pending'?'cond':'no'}">${u.status}</span></td>
+        <td>${u.status==='pending'?`<button class="btn sm" onclick="userAction(${u.id},'approve')">${t(I18N.approve)}</button> <button class="btn ghost sm" onclick="userAction(${u.id},'reject')">${t(I18N.reject)}</button>`:''}</td></tr>`).join('')+`</tbody></table>`;
+  } else {
+    const r=await api('/api/admin/audit');
+    body=`<table><thead><tr><th>time</th><th>actor</th><th>action</th><th>target</th></tr></thead><tbody>`+
+      (r.body||[]).map(a=>`<tr><td style="font-size:11px">${(a.created_at||'').toString().slice(0,19).replace('T',' ')}</td><td>${a.actor||'-'}</td><td>${a.action}</td><td>${a.target||''}</td></tr>`).join('')+`</tbody></table>`;
+  }
+  $('v-admin').innerHTML=`<div class="crumbs"><span onclick="go('home')">${t(I18N.back)}</span> / 🛠️</div>
+    <div class="portalhead"><h2>🛠️ ${t(I18N.entries[3].title)}</h2></div>
+    <div class="tabs">${tabs.map(([k,lbl])=>`<button class="${k===adminTab?'on':''}" onclick="adminTab='${k}';render()">${t(lbl)}</button>`).join('')}</div>
+    <div class="card">${body}</div>`;
+}
+async function userAction(id,action){ await api(`/api/admin/users/${id}/${action}`,{method:'POST'}); render(); }
+
+async function render(){
+  ['home','exhibitor','buyer','consumer','admin'].forEach(v=>$('v-'+v).classList.toggle('active',v===VIEW));
+  header();
+  if(VIEW==='home')await renderHome();
+  else if(VIEW==='consumer')await renderConsumer();
+  else if(VIEW==='buyer')await renderBuyer();
+  else if(VIEW==='exhibitor')await renderExhibitor();
+  else if(VIEW==='admin')await renderAdmin();
+}
+(async()=>{
+  if(TOKEN){ const r=await api('/api/me'); if(r.status===200&&r.body){USER=r.body;} else {TOKEN=null;localStorage.removeItem('expoToken');} }
+  const h=location.hash.replace('#',''); if(['home','exhibitor','buyer','consumer','admin'].includes(h))VIEW=h;
+  render();
+})();
+</script>
+</body>
+</html>
