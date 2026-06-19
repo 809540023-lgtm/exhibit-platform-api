@@ -56,5 +56,11 @@ window.I18N = {
     "您正在以匿名消费者浏览,只会看到 L1 公开资料。打开浏览器 DevTools → Network 查看 /api/products,不会有任何批发价或内部备注。",
     "匿名の消費者として閲覧中。L1のみ表示。DevTools→Networkで /api/products を確認しても卸価格や内部メモは含まれません。",
     "Browsing as anonymous consumer — L1 only. Open DevTools → Network on /api/products: no wholesale prices or internal notes."),
-  exhibitorNote:L("展商上傳介面(Phase③ 補齊)。目前可註冊並等待審核。","展商上传界面(Phase③ 补齐)。目前可注册并等待审核。","出展者アップロード(Phase③で実装)。今は登録・審査待ちが可能。","Exhibitor upload (coming in Phase ③). For now you can register and await approval.")
+  exhibitorNote:L("展商上傳介面(Phase③ 補齊)。目前可註冊並等待審核。","展商上传界面(Phase③ 补齐)。目前可注册并等待审核。","出展者アップロード(Phase③で実装)。今は登録・審査待ちが可能。","Exhibitor upload (coming in Phase ③). For now you can register and await approval."),
+  bot: {
+    title: L("展會資料助理","展会资料助理","展示会データアシスタント","Expo Data Assistant"),
+    placeholder: L("輸入問題…","输入问题…","質問を入力…","Type a question…"),
+    welcome: L("您好!我可依您的身份回答展會與商品資料。試試下方快捷,或直接打字。","您好!我可依您的身份回答展会与商品资料。试试下方快捷,或直接打字。","こんにちは!権限に応じて展示会・商品情報をお答えします。下のボタンまたは入力をどうぞ。","Hi! I answer expo & product questions based on your role. Try a quick button or type."),
+    chips: L(["展會資訊","我的商品","報名流程","展商上傳"],["展会信息","我的商品","报名流程","展商上传"],["展示会情報","私の商品","登録の流れ","出展者の登録"],["Expo info","My products","Sign-up flow","Exhibitor upload"])
+  }
 };

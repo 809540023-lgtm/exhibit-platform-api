@@ -48,6 +48,22 @@
   .yes{color:var(--ok);font-weight:700}.non{color:var(--no)}
   footer{text-align:center;color:var(--mute);font-size:12px;padding:24px 0 40px;border-top:1px solid var(--line);margin-top:24px}
   @media(max-width:680px){.grid4{grid-template-columns:1fr}}
+  /* chatbot */
+  #botFab{position:fixed;right:22px;bottom:22px;width:56px;height:56px;border-radius:50%;border:none;background:var(--cherry);color:#fff;font-size:26px;cursor:pointer;box-shadow:0 8px 22px rgba(153,0,17,.35);z-index:60}
+  #botPanel{position:fixed;right:22px;bottom:88px;width:340px;max-width:calc(100vw - 28px);height:480px;max-height:calc(100vh - 130px);background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.18);z-index:60;display:none;flex-direction:column;overflow:hidden}
+  #botPanel.open{display:flex}
+  #botHead{background:var(--cherry);color:#fff;padding:12px 14px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+  #botX{cursor:pointer;opacity:.85}
+  #botBody{flex:1;overflow-y:auto;padding:12px;background:#faf6f5;font-size:13px;display:flex;flex-direction:column;gap:8px}
+  .bmsg{max-width:85%;padding:8px 11px;border-radius:12px;white-space:pre-wrap;line-height:1.5}
+  .bmsg.bot{background:#fff;border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:3px}
+  .bmsg.me{background:var(--navy);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+  #botChips{display:flex;gap:6px;flex-wrap:wrap;padding:8px 10px;border-top:1px solid var(--line);background:#fff}
+  #botChips button{font-size:11.5px;border:1px solid var(--line);background:#fff;border-radius:14px;padding:4px 10px;cursor:pointer;color:var(--navy)}
+  #botInput{display:flex;gap:6px;padding:10px;border-top:1px solid var(--line)}
+  #botText{flex:1;padding:9px;border:1px solid var(--line);border-radius:9px;font-size:13px;font-family:inherit}
+  #botSend{border:none;background:var(--cherry);color:#fff;border-radius:9px;padding:0 14px;cursor:pointer;font-size:15px}
+  @media(max-width:680px){#botPanel{right:8px;left:8px;width:auto}}
 </style>
 </head>
 <body>
@@ -63,6 +79,18 @@
   <section id="v-admin" class="view"></section>
 </div>
 <footer><div class="wrap" id="foot"></div></footer>
+
+<!-- 機器人問答 widget -->
+<button id="botFab" onclick="toggleBot()" aria-label="chat">🤖</button>
+<div id="botPanel">
+  <div id="botHead"><span id="botTitle">🤖</span><span id="botX" onclick="toggleBot()">✕</span></div>
+  <div id="botBody"></div>
+  <div id="botChips"></div>
+  <div id="botInput">
+    <input id="botText" type="text" onkeydown="if(event.key==='Enter')sendBot()" autocomplete="off">
+    <button onclick="sendBot()" id="botSend">➤</button>
+  </div>
+</div>
 
 <script src="i18n.js"></script>
 <script>
@@ -213,6 +241,33 @@ async function render(){
   else if(VIEW==='buyer')await renderBuyer();
   else if(VIEW==='exhibitor')await renderExhibitor();
   else if(VIEW==='admin')await renderAdmin();
+  botLabels();
+}
+
+/* ---------- 機器人 widget ---------- */
+let botOpened=false;
+function botLabels(){
+  $('botTitle').textContent='🤖 '+t(I18N.bot.title);
+  $('botText').placeholder=t(I18N.bot.placeholder);
+  $('botChips').innerHTML=t(I18N.bot.chips).map(c=>`<button onclick="botChip('${c.replace(/'/g,"")}')">${c}</button>`).join('');
+}
+function toggleBot(){
+  botOpened=!botOpened;
+  $('botPanel').classList.toggle('open',botOpened);
+  if(botOpened && !$('botBody').dataset.init){ addBot(t(I18N.bot.welcome)); $('botBody').dataset.init='1'; $('botText').focus(); }
+}
+function addBot(text){ const d=document.createElement('div'); d.className='bmsg bot'; d.textContent=text; $('botBody').appendChild(d); $('botBody').scrollTop=$('botBody').scrollHeight; }
+function addMe(text){ const d=document.createElement('div'); d.className='bmsg me'; d.textContent=text; $('botBody').appendChild(d); $('botBody').scrollTop=$('botBody').scrollHeight; }
+function botChip(txt){ $('botText').value=txt; sendBot(); }
+async function sendBot(){
+  const v=$('botText').value.trim(); if(!v) return;
+  addMe(v); $('botText').value='';
+  const typing=document.createElement('div'); typing.className='bmsg bot'; typing.textContent='…'; $('botBody').appendChild(typing);
+  try{
+    const r=await api('/api/chat',{method:'POST',body:JSON.stringify({message:v,lang:LANG})});
+    typing.remove();
+    addBot((r.body&&r.body.reply)|| '⚠️');
+  }catch(e){ typing.remove(); addBot('⚠️'); }
 }
 (async()=>{
   if(TOKEN){ const r=await api('/api/me'); if(r.status===200&&r.body){USER=r.body;} else {TOKEN=null;localStorage.removeItem('expoToken');} }

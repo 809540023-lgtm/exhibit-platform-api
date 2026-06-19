@@ -9,6 +9,7 @@ const db = require('./db');
 const { seed } = require('./seed');
 const A = require('./auth');
 const S = require('./serializers');
+const chat = require('./chat');
 
 const app = express();
 app.use(cors());
@@ -136,6 +137,16 @@ app.post('/api/admin/grants', A.requireAuth('admin'), async (req, res) => {
 app.get('/api/admin/audit', A.requireAuth('admin'), async (req, res) => {
   const r = await db.query(`SELECT * FROM audit_log ORDER BY created_at DESC LIMIT 200`);
   res.json(r.rows);
+});
+
+// ---------- 機器人問答(依身份權限隔離) ----------
+// optionalAuth:有 token 用其身份過濾;無 token 視為匿名(只 L1)。
+app.post('/api/chat', A.optionalAuth, async (req, res) => {
+  try {
+    const { message, lang } = req.body || {};
+    const out = await chat.answer(message, req.auth, lang);
+    res.json(out);
+  } catch (e) { res.status(500).json({ error: 'chat_error' }); }
 });
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
