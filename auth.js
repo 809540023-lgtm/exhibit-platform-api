@@ -43,4 +43,22 @@ function requireAuth(...roles) {
   };
 }
 
-module.exports = { hashPassword, verifyPassword, signToken, optionalAuth, requireAuth, SECRET };
+// ---------- 展場免登入上傳 token ----------
+// 管理人簽發一張「展場上傳 token」印在 DM 的 QR 上。展商掃碼即可上傳,
+// 不需註冊/登入。token 只授權「上傳」,不能讀取任何 L1~L4 資料。
+const UPLOAD_TTL = process.env.UPLOAD_TTL || '180d';
+function signUpload(meta) {
+  return jwt.sign({ purpose: 'upload', scope: (meta && meta.scope) || 'expo' }, SECRET, { expiresIn: UPLOAD_TTL });
+}
+// 從 header(Bearer)或 body.token 讀取上傳 token,驗證 purpose
+function readUpload(req) {
+  let tok = null;
+  const h = req.headers.authorization || '';
+  const m = h.match(/^Bearer\s+(.+)$/i);
+  if (m) tok = m[1];
+  if (!tok && req.body && req.body.token) tok = req.body.token;
+  if (!tok) return null;
+  try { const p = jwt.verify(tok, SECRET); return p.purpose === 'upload' ? p : null; } catch { return null; }
+}
+
+module.exports = { hashPassword, verifyPassword, signToken, optionalAuth, requireAuth, signUpload, readUpload, SECRET };

@@ -114,6 +114,7 @@
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
   /* Phase③ */
   .formgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:var(--sp-3) var(--sp-4);margin-bottom:var(--sp-3)}
+  .uploadwrap{max-width:680px;margin:0 auto}
   .toolbar{display:flex;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-3)}
   #modal{position:fixed;inset:0;background:rgba(28,25,23,.45);display:none;align-items:center;justify-content:center;z-index:80;padding:var(--sp-4)}
   #modal.open{display:flex}
@@ -154,6 +155,7 @@
   <section id="v-buyer" class="view"></section>
   <section id="v-consumer" class="view"></section>
   <section id="v-admin" class="view"></section>
+  <section id="v-upload" class="view"></section>
 </div>
 <footer><div class="wrap" id="foot"></div></footer>
 
@@ -176,6 +178,7 @@ let LANG = localStorage.getItem('expoLang') || 'tc';
 let VIEW = 'home';
 let TOKEN = localStorage.getItem('expoToken') || null;
 let USER = null;
+let UPLOAD_TOKEN = null;
 const t = o => (o && o[LANG] !== undefined) ? o[LANG] : (o||'');
 const $ = id => document.getElementById(id);
 const stars = n => '★'.repeat(n||0)+'☆'.repeat(5-(n||0));
@@ -278,29 +281,12 @@ async function renderBuyer(){
 }
 
 async function renderExhibitor(){
-  if(!USER||USER.role!=='exhibitor'){ $('v-exhibitor').innerHTML=`<div class="crumbs"><span onclick="go('home')">${t(I18N.back)}</span> / 🏭</div><div class="portalhead"><h2>🏭 ${t(I18N.entries[0].title)}</h2></div>${authForm('exhibitor')}`; return; }
-  const P=I18N.p3;
-  const r=await api('/api/exhibitor/products');
-  const statusBadge=s=>s==='approved'?`<span class="badge ok">${t(P.statusApproved)}</span>`:s==='rejected'?`<span class="badge no">${t(P.statusRejected)}</span>`:`<span class="badge cond">${t(P.statusPending)}</span>`;
-  const mine=(r.body||[]).map(p=>`<tr><td><b>${t(p.name)}</b></td><td>${t(p.consumer.price)}</td><td>${statusBadge(p.status)}</td>
-    <td>${p.fieldNote?`<span style="color:var(--warn)">${t(I18N.p3.feedback)}${t(p.fieldNote)}</span>`:'—'}</td></tr>`).join('');
-  const fld=(id,lbl,ph)=>`<label>${lbl}<input id="${id}" placeholder="${ph||''}"></label>`;
+  // 展商免註冊:此頁僅說明「請掃描現場 QR 上傳」。實際上傳走 ?upload=token 免登入頁。
   $('v-exhibitor').innerHTML=`<div class="crumbs"><span onclick="go('home')">${t(I18N.back)}</span> / 🏭</div>
     <div class="portalhead"><h2>🏭 ${t(I18N.entries[0].title)}</h2><div class="langnote">${t(I18N.entries[0].tag||'')}</div></div>
-    <div class="card navy"><h4>📤 ${t(P.newProduct)}</h4>
-      <div id="exMsg"></div>
-      <form class="auth" style="max-width:100%" onsubmit="return submitExh(event)">
-        <div class="formgrid">
-          ${fld('xName',t(P.fName),'')}${fld('xCategory',t(P.fCategory),'')}${fld('xBooth',t(P.fBooth),'E-12')}
-          ${fld('xPrice',t(P.fPrice),'¥')}${fld('xMoq',t(I18N.moq),'')}${fld('xWholesale',t(I18N.wholesale),'')}
-          ${fld('xExport',t(I18N.exportL),'')}${fld('xOem',t(I18N.oem),'')}${fld('xOrigin',t(P.fOrigin),'')}
-        </div>
-        <label>${t(P.fStory)}<textarea id="xStory" rows="2"></textarea></label>
-        <label>${t(P.fFeature)}<input id="xFeature"></label>
-        <button class="btn navy" type="submit">${t(P.submit)}</button>
-      </form></div>
-    <div class="card"><h4>📋 ${t(P.myUploads)}</h4>
-      ${mine?`<div class="tablewrap"><table><thead><tr><th>${t(P.fName)}</th><th>${t(P.fPrice)}</th><th>${t(I18N.status)}</th><th>${t(P.feedback).replace(':','').replace('：','')}</th></tr></thead><tbody>${mine}</tbody></table></div>`:`<div class="empty"><span class="ei">📦</span>—</div>`}
+    <div class="card navy" style="text-align:center">
+      <div style="font-size:40px">📱</div>
+      <p style="color:var(--ink-2);line-height:1.7">${t(I18N.up.exhibitorInfo)}</p>
     </div>`;
 }
 async function submitExh(e){ e.preventDefault();
@@ -322,18 +308,24 @@ async function renderAdmin(){
   let body='';
   let toolbar='';
   const P=I18N.p3;
-  const stB=s=>s==='approved'?`<span class="badge ok">${t(P.statusApproved)}</span>`:s==='rejected'?`<span class="badge no">${t(P.statusRejected)}</span>`:`<span class="badge cond">${t(P.statusPending)}</span>`;
+  const U=I18N.up;
+  const stB=s=>s==='approved'?`<span class="badge ok">${t(U.stLive)}</span>`:s==='removed'?`<span class="badge no">${t(U.stRemoved)}</span>`:s==='rejected'?`<span class="badge no">${t(P.statusRejected)}</span>`:`<span class="badge cond">${t(P.statusPending)}</span>`;
   const wrap = (head, rows) => rows ? `<div class="tablewrap"><table>${head}<tbody>${rows}</tbody></table></div>` : `<div class="empty"><span class="ei">📭</span>—</div>`;
   if(adminTab==='products'){
     const r=await api('/api/admin/products');
-    toolbar=`<div class="toolbar"><button class="btn ghost sm" onclick="exportCsv('admin')">⬇ ${t(P.exportCsv)}(L3)</button><button class="btn ghost sm" onclick="printReport('admin')">🖨 ${t(P.printPdf)}</button></div>`;
+    toolbar=`<div class="toolbar"><button class="btn navy sm" onclick="showUploadQr()">📱 ${t(U.expoQrBtn)}</button><button class="btn ghost sm" onclick="exportCsv('admin')">⬇ ${t(P.exportCsv)}(L3)</button><button class="btn ghost sm" onclick="printReport('admin')">🖨 ${t(P.printPdf)}</button></div>`;
     const head=`<thead><tr><th>${t(I18N.entries[0].title)}</th><th>${t(I18N.status)}</th><th class="num">${t(I18N.wholesale)}</th><th>${t(I18N.internal)}</th><th>${t(I18N.grantedTo)}</th><th></th></tr></thead>`;
+    const act=p=>{
+      if(p.status==='pending') return `<button class="btn sm" onclick="reviewProduct('${p.id}','approve')">${t(P.approve)}</button> <button class="btn ghost sm" onclick="reviewProduct('${p.id}','reject')">${t(P.reject)}</button>`;
+      if(p.status==='approved') return `<button class="btn ghost sm" onclick="reviewProduct('${p.id}','takedown')">${t(U.takedown)}</button>`;
+      return `<button class="btn sm" onclick="reviewProduct('${p.id}','restore')">${t(U.restore)}</button>`;
+    };
     const rows=(r.body||[]).map(p=>`<tr><td><b>${t(p.name)}</b></td>
         <td>${stB(p.status)}</td>
         <td class="num"><b style="color:var(--cherry)">${t(p.b2b.wholesale)}</b></td>
         <td><div class="anote">${t(p.admin.verbal)}｜${t(p.admin.risk)}｜興趣:${(p.admin.interested||[]).join(',')}${p.fieldNote?'｜📝'+t(p.fieldNote):''}</div></td>
         <td>${(p.grantedTo||[]).map(c=>`<span class="pill lv">${c}</span>`).join('')||'—'}</td>
-        <td style="white-space:nowrap">${p.status==='pending'?`<button class="btn sm" onclick="reviewProduct('${p.id}','approve')">${t(P.approve)}</button> <button class="btn ghost sm" onclick="reviewProduct('${p.id}','reject')">${t(P.reject)}</button>`:`<button class="btn ghost sm" onclick="showQr('${p.exhibitorId}')">${t(P.qrBtn)}</button>`}</td></tr>`).join('');
+        <td style="white-space:nowrap">${act(p)}</td></tr>`).join('');
     body=wrap(head,rows);
   } else if(adminTab==='users'){
     const r=await api('/api/admin/users');
@@ -358,13 +350,24 @@ async function userAction(id,action){ await api(`/api/admin/users/${id}/${action
 /* ---- Phase③: 審核 / QR / 匯出 / 列印 ---- */
 async function reviewProduct(id,action){
   let note=null;
-  if(action==='reject'||action==='approve'){
+  if(action==='reject'||action==='takedown'){
     const txt=prompt(t(I18N.p3.noteAsk));
-    if(txt===null && action==='reject') return; // 取消退回
+    if(txt===null) return; // 取消
     if(txt) note={tc:txt,sc:txt,ja:txt,en:txt};
   }
   await api(`/api/admin/products/${id}/${action}`,{method:'POST',body:JSON.stringify({fieldNote:note})});
   render();
+}
+async function showUploadQr(){
+  const U=I18N.up;
+  showModal(`<h4 style="color:var(--cherry)">${t(U.expoQrTitle)}</h4><div class="empty">${t(I18N.loading)}</div>`);
+  const r=await api('/api/admin/upload-qr');
+  if(r.status===200){
+    showModal(`<h4 style="color:var(--cherry)">${t(U.expoQrTitle)}</h4>
+      <div style="text-align:center">${r.body.svg}</div>
+      <p style="font-size:12px;color:var(--mute);text-align:center;margin-top:8px">${t(U.expoQrHint)}</p>
+      <p style="font-size:11px;word-break:break-all;color:var(--navy);text-align:center">${r.body.url}</p>`);
+  } else showModal(`<div class="msg err">QR error</div>`);
 }
 function showModal(html){
   let m=document.getElementById('modal');
@@ -394,14 +397,54 @@ async function exportCsv(role){
 function printReport(){ window.print(); }
 
 async function render(){
-  ['home','exhibitor','buyer','consumer','admin'].forEach(v=>$('v-'+v).classList.toggle('active',v===VIEW));
+  ['home','exhibitor','buyer','consumer','admin','upload'].forEach(v=>$('v-'+v).classList.toggle('active',v===VIEW));
   header();
+  // 免登入上傳頁:隱藏機器人與身份切換,維持極簡
+  const simple = VIEW==='upload';
+  $('botFab').style.display = simple ? 'none' : '';
+  if(simple){ $('rolebox').innerHTML=''; }
   if(VIEW==='home')await renderHome();
   else if(VIEW==='consumer')await renderConsumer();
   else if(VIEW==='buyer')await renderBuyer();
   else if(VIEW==='exhibitor')await renderExhibitor();
   else if(VIEW==='admin')await renderAdmin();
+  else if(VIEW==='upload')renderUpload();
   botLabels();
+}
+function renderUpload(done){
+  const U=I18N.up, P=I18N.p3;
+  if(done){
+    $('v-upload').innerHTML=`<div class="uploadwrap"><div class="card" style="text-align:center">
+      <div style="font-size:48px">✅</div><h2 style="color:var(--cherry)">${t(U.title)}</h2>
+      <p style="color:var(--ink-2)">${t(U.thanks)}</p>
+      <button class="btn navy" onclick="renderUpload(false)">${t(U.again)}</button></div></div>`;
+    return;
+  }
+  const fld=(id,lbl,ph)=>`<label>${lbl}<input id="${id}" placeholder="${ph||''}"></label>`;
+  $('v-upload').innerHTML=`<div class="uploadwrap">
+    <div class="portalhead"><h2>🏭 ${t(U.title)}</h2></div>
+    <p class="note">${t(U.intro)}</p>
+    <div id="upMsg"></div>
+    <form class="auth" style="max-width:100%" onsubmit="return submitUpload(event)">
+      <div class="formgrid">
+        ${fld('uCompany','★ '+t(U.company),'')}${fld('uBooth',t(P.fBooth),'E-12')}${fld('uName','★ '+t(P.fName),'')}
+        ${fld('uPrice',t(P.fPrice),'¥')}${fld('uOrigin',t(P.fOrigin),'')}${fld('uMoq',t(I18N.moq),'')}
+        ${fld('uWholesale',t(I18N.wholesale),'')}${fld('uExport',t(I18N.exportL),'')}${fld('uOem',t(I18N.oem),'')}
+      </div>
+      <label>${t(P.fStory)}<textarea id="uStory" rows="2"></textarea></label>
+      <label>${t(P.fFeature)}<input id="uFeature"></label>
+      <button class="btn navy" type="submit" style="font-size:16px;padding:12px 28px">${t(U.submit)}</button>
+    </form></div>`;
+}
+async function submitUpload(e){ e.preventDefault();
+  const g=id=>{const el=document.getElementById(id);return el?el.value.trim():''};
+  if(!g('uCompany')||!g('uName')){ $('upMsg').innerHTML=`<div class="msg err">${t(I18N.up.required)}</div>`; return false; }
+  const body={token:UPLOAD_TOKEN,company:g('uCompany'),booth:g('uBooth'),name:g('uName'),price:g('uPrice'),origin:g('uOrigin'),moq:g('uMoq'),wholesale:g('uWholesale'),exportT:g('uExport'),oem:g('uOem'),story:g('uStory'),feature:g('uFeature')};
+  const r=await fetch('/api/upload',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+  if(r.status===200){ renderUpload(true); }
+  else if(r.status===401){ $('upMsg').innerHTML=`<div class="msg err">${t(I18N.up.badToken)}</div>`; }
+  else { const j=await r.json().catch(()=>({})); $('upMsg').innerHTML=`<div class="msg err">${j.error||'error'}</div>`; }
+  return false;
 }
 
 /* ---------- 機器人 widget ---------- */
@@ -430,6 +473,9 @@ async function sendBot(){
   }catch(e){ typing.remove(); addBot('⚠️'); }
 }
 (async()=>{
+  // 免登入上傳深連結優先:?upload=<token>
+  const qs=new URLSearchParams(location.search);
+  if(qs.get('upload')){ UPLOAD_TOKEN=qs.get('upload'); VIEW='upload'; render(); return; }
   if(TOKEN){ const r=await api('/api/me'); if(r.status===200&&r.body){USER=r.body;} else {TOKEN=null;localStorage.removeItem('expoToken');} }
   const h=location.hash.replace('#',''); if(['home','exhibitor','buyer','consumer','admin'].includes(h))VIEW=h;
   render();

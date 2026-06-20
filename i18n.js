@@ -89,5 +89,29 @@ window.I18N = {
     exportCsv: L("匯出 CSV","导出 CSV","CSV出力","Export CSV"),
     printPdf: L("列印 / PDF","打印 / PDF","印刷 / PDF","Print / PDF"),
     close: L("關閉","关闭","閉じる","Close")
+  },
+  up: {
+    title: L("展品上傳","展品上传","出展商品アップロード","Product Upload"),
+    intro: L("您好!請填寫貴公司的商品資料,送出後即會在我們的展示頁面上公開。免註冊、免登入。",
+      "您好!请填写贵公司的商品资料,送出后即会在我们的展示页面上公开。免注册、免登录。",
+      "ご記入ありがとうございます。商品情報をご登録いただくと、当社の展示ページに公開されます。登録・ログイン不要です。",
+      "Hello! Enter your product details. Once submitted, it appears on our showcase page. No sign-up or login needed."),
+    company: L("公司名稱","公司名称","会社名","Company name"),
+    submit: L("送出","送出","送信","Submit"),
+    thanks: L("已收到,感謝您!您的商品已公開於展示頁。","已收到,感谢您!您的商品已公开于展示页。","送信ありがとうございました。商品は展示ページに公開されました。","Thank you! Your product is now live on the showcase."),
+    again: L("再上傳一筆","再上传一笔","続けて登録","Upload another"),
+    required: L("請至少填寫公司名稱與商品名稱。","请至少填写公司名称与商品名称。","会社名と商品名は必須です。","Company name and product name are required."),
+    badToken: L("此上傳連結無效或已過期,請向主辦方索取新的 QR。","此上传链接无效或已过期,请向主办方索取新的 QR。","このリンクは無効または期限切れです。主催者に新しいQRをご請求ください。","This upload link is invalid or expired. Please ask the organizer for a new QR."),
+    expoQrBtn: L("展場上傳 QR","展场上传 QR","会場アップロードQR","Expo upload QR"),
+    expoQrTitle: L("展場上傳 QR(印在 DM)","展场上传 QR(印在 DM)","会場アップロードQR(DMに印刷)","Expo upload QR (print on DM)"),
+    expoQrHint: L("把這個 QR 印在紙本 DM 上;展商掃碼即可免登入上傳,送出即公開。","把这个 QR 印在纸本 DM 上;展商扫码即可免登录上传,送出即公开。","このQRをDMに印刷。出展者はスキャンしてログイン不要で登録でき、即時公開されます。","Print this QR on your DM. Exhibitors scan to upload without login; submissions go live instantly."),
+    takedown: L("下架","下架","非公開","Take down"),
+    restore: L("上架","上架","再公開","Restore"),
+    stRemoved: L("已下架","已下架","非公開","Removed"),
+    stLive: L("已公開","已公开","公開中","Live"),
+    exhibitorInfo: L("展商上傳免註冊:請在展場掃描我們紙本 DM 上的 QR Code,即可直接上傳商品(送出即公開)。如需 QR,請洽現場工作人員或由管理人於後台產生。",
+      "展商上传免注册:请在展场扫描我们纸本 DM 上的 QR Code,即可直接上传商品(送出即公开)。如需 QR,请洽现场工作人员或由管理人于后台产生。",
+      "出展者の登録は不要です。会場で配布するDM上のQRコードをスキャンすると、そのまま商品を登録できます(送信後すぐ公開)。QRが必要な場合は現場スタッフまたは管理者まで。",
+      "No sign-up for exhibitors. Scan the QR on our printed DM at the venue to upload products directly (live on submit). Need a QR? Ask on-site staff or the admin.")
   }
 };

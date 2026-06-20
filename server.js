@@ -75,20 +75,55 @@ app.get('/api/admin/products', A.requireAuth('admin'), async (req, res) => {
   res.json(out);
 });
 
-// ---------- 管理人:審核展商送出的商品(核可 / 退回 + 現場備註) ----------
+// ---------- 管理人:管理商品狀態(核可 / 退回 / 下架 / 上架 + 現場備註) ----------
 app.post('/api/admin/products/:id/:action', A.requireAuth('admin'), async (req, res) => {
   const { id, action } = req.params;
-  if (!['approve', 'reject'].includes(action)) return res.status(400).json({ error: 'bad_action' });
   const note = (req.body && req.body.fieldNote) || null;
-  if (action === 'approve') {
-    await db.query(`UPDATE products SET status='approved', reviewed=true, open_l1=true, open_l2=true, field_note=$2 WHERE id=$1`,
-      [id, note ? JSON.stringify(note) : null]);
-  } else {
-    await db.query(`UPDATE products SET status='rejected', reviewed=false, open_l1=false, open_l2=false, field_note=$2 WHERE id=$1`,
-      [id, note ? JSON.stringify(note) : null]);
-  }
+  const noteSql = note ? JSON.stringify(note) : null;
+  let newStatus;
+  if (action === 'approve' || action === 'restore') {       // 對外公開
+    await db.query(`UPDATE products SET status='approved', reviewed=true, open_l1=true, open_l2=true, field_note=COALESCE($2,field_note) WHERE id=$1`, [id, noteSql]);
+    newStatus = 'approved';
+  } else if (action === 'reject') {                          // 退回(審核模式)
+    await db.query(`UPDATE products SET status='rejected', reviewed=false, open_l1=false, open_l2=false, field_note=$2 WHERE id=$1`, [id, noteSql]);
+    newStatus = 'rejected';
+  } else if (action === 'takedown') {                        // 下架(送出即公開模式)
+    await db.query(`UPDATE products SET status='removed', open_l1=false, open_l2=false, field_note=COALESCE($2,field_note) WHERE id=$1`, [id, noteSql]);
+    newStatus = 'removed';
+  } else { return res.status(400).json({ error: 'bad_action' }); }
   await audit(req.auth.uid, 'product_' + action, id, {});
-  res.json({ ok: true, status: action === 'approve' ? 'approved' : 'rejected' });
+  res.json({ ok: true, status: newStatus });
+});
+
+// ---------- 展場免登入上傳:掃 DM 上的 QR → 直接送出 → 即公開 ----------
+// 不需帳號;僅需有效的展場上傳 token(印在 QR 內)。送出即 open_l1/open_l2=true。
+app.post('/api/upload', async (req, res) => {
+  const up = A.readUpload(req);
+  if (!up) return res.status(401).json({ error: 'invalid_upload_token' });
+  const b = req.body || {};
+  const company = (b.company || '').trim();
+  const pname = (b.name || '').trim();
+  if (!company || !pname) return res.status(400).json({ error: 'company_and_name_required' });
+  // 以公司名(繁中)找現有展商,否則新建
+  let exId;
+  const found = await db.query(`SELECT id FROM exhibitors WHERE name->>'tc' = $1 LIMIT 1`, [company]);
+  if (found.rowCount) { exId = found.rows[0].id; }
+  else {
+    exId = 'x' + Date.now().toString(36);
+    await db.query(`INSERT INTO exhibitors(id,name,booth,category,reviewed,status) VALUES($1,$2,$3,$4,true,'approved')`,
+      [exId, JSON.stringify(mono(company)), b.booth || '', JSON.stringify(mono(b.category || ''))]);
+  }
+  const pid = 'p' + Date.now().toString(36);
+  const consumer = { image: b.image || '📦', story: mono(b.story), feature: mono(b.feature), origin: mono(b.origin), usage: mono(b.usage), price: mono(b.price), buy: mono(b.buy || '') };
+  const b2b = { moq: mono(b.moq), wholesale: mono(b.wholesale), sample: mono(b.sample), exportT: mono(b.exportT), oem: mono(b.oem), adminNote: mono(''), recommend: 0, fit_tw: false, fit_cn: false, follow: false };
+  const admin_meta = { verbal: mono(''), attitude: mono(''), risk: mono(''), interested: [] };
+  // 送出即公開:open_l1/open_l2=true、status='approved'。管理人事後可下架。
+  await db.query(
+    `INSERT INTO products(id,exhibitor_id,name,consumer,b2b,admin_meta,reviewed,open_l1,open_l2,status,submitted_by)
+     VALUES($1,$2,$3,$4,$5,$6,true,true,true,'approved',NULL)`,
+    [pid, exId, JSON.stringify(mono(pname)), JSON.stringify(consumer), JSON.stringify(b2b), JSON.stringify(admin_meta)]);
+  await audit(null, 'public_upload', pid, { exhibitor: exId, company });
+  res.json({ ok: true, id: pid });
 });
 
 // ---------- 身份驗證 ----------
@@ -201,6 +236,18 @@ app.post('/api/exhibitor/products', A.requireAuth('exhibitor'), async (req, res)
     [pid, exId, JSON.stringify(mono(b.name)), JSON.stringify(consumer), JSON.stringify(b2b), JSON.stringify(admin_meta), req.auth.uid]);
   await audit(req.auth.uid, 'product_submit', pid, { exhibitor: exId });
   res.json({ ok: true, id: pid, status: 'pending' });
+});
+
+// ---------- 管理人:產生「展場上傳 QR」(免登入上傳,印在 DM) ----------
+app.get('/api/admin/upload-qr', A.requireAuth('admin'), async (req, res) => {
+  const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+  const host = req.headers['x-forwarded-host'] || req.headers.host;
+  const token = A.signUpload({ scope: 'expo' });
+  const url = `${proto}://${host}/?upload=${token}`;
+  try {
+    const svg = await QRCode.toString(url, { type: 'svg', margin: 1, width: 240 });
+    res.json({ url, svg, token });
+  } catch (e) { res.status(500).json({ error: 'qr_failed' }); }
 });
 
 // ---------- 管理人:產生展商專屬 QR Code(SVG + 深連結) ----------
