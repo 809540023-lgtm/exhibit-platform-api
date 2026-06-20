@@ -70,3 +70,9 @@ CREATE TABLE IF NOT EXISTS audit_log (
 
 CREATE INDEX IF NOT EXISTS idx_grants_client ON grants(client_id);
 CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
+
+-- Phase③ 擴充:商品送審狀態、送出者、管理人現場備註(L3)
+-- 既有 Postgres 第一次 ALTER 會新增,之後重跑會丟「already exists」由 migrate 忽略
+ALTER TABLE products ADD COLUMN status TEXT DEFAULT 'approved';
+ALTER TABLE products ADD COLUMN submitted_by INTEGER;
+ALTER TABLE products ADD COLUMN field_note JSONB;

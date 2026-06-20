@@ -37,8 +37,23 @@ function productAdmin(row, grantedClientIds) {
     reviewed: row.reviewed,
     open_l1: row.open_l1,
     open_l2: row.open_l2,
+    status: row.status || 'approved',      // pending / approved / rejected
+    submittedBy: row.submitted_by || null,
+    fieldNote: row.field_note || null,     // 管理人現場備註(L3)
     admin: row.admin_meta,                 // verbal, attitude, risk, interested_buyers
     grantedTo: grantedClientIds || []      // L4:被開放的客戶清單
+  };
+}
+
+// 展商自己的商品 — 只給送出者本人;含他填的內容,不含 L3 admin_meta,也看不到別人。
+function productExhibitor(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    consumer: row.consumer,
+    b2b: row.b2b,
+    status: row.status || 'pending',
+    fieldNote: row.field_note || null      // 管理人退件/補充說明的回饋
   };
 }
 
@@ -50,4 +65,4 @@ function user(row) {
   };
 }
 
-module.exports = { productL1, productL2, productAdmin, user };
+module.exports = { productL1, productL2, productAdmin, productExhibitor, user };

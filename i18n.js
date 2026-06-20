@@ -62,5 +62,32 @@ window.I18N = {
     placeholder: L("輸入問題…","输入问题…","質問を入力…","Type a question…"),
     welcome: L("您好!我可依您的身份回答展會與商品資料。試試下方快捷,或直接打字。","您好!我可依您的身份回答展会与商品资料。试试下方快捷,或直接打字。","こんにちは!権限に応じて展示会・商品情報をお答えします。下のボタンまたは入力をどうぞ。","Hi! I answer expo & product questions based on your role. Try a quick button or type."),
     chips: L(["展會資訊","我的商品","報名流程","展商上傳"],["展会信息","我的商品","报名流程","展商上传"],["展示会情報","私の商品","登録の流れ","出展者の登録"],["Expo info","My products","Sign-up flow","Exhibitor upload"])
+  },
+  p3: {
+    newProduct: L("新增商品(送出後待審核)","新增商品(送出后待审核)","商品を登録(審査待ち)","Add product (pending review)"),
+    submit: L("送出審核","送出审核","審査に提出","Submit for review"),
+    myUploads: L("我送出的商品","我送出的商品","提出した商品","My submissions"),
+    fName: L("商品名稱","商品名称","商品名","Product name"),
+    fCategory: L("品類","品类","カテゴリ","Category"),
+    fBooth: L("攤位","展位","ブース","Booth"),
+    fStory: L("品牌故事 / 簡介","品牌故事 / 简介","ブランドストーリー","Brand story"),
+    fFeature: L("特色","特色","特長","Features"),
+    fOrigin: L("產地","产地","産地","Origin"),
+    fUsage: L("使用方式","使用方式","使い方","Usage"),
+    fPrice: L("參考售價","参考售价","参考価格","Retail price"),
+    statusPending: L("待審核","待审核","審査待ち","Pending"),
+    statusApproved: L("已核可","已核可","承認済","Approved"),
+    statusRejected: L("已退回","已退回","却下","Rejected"),
+    feedback: L("管理人回饋:","管理人回馈:","管理者フィードバック:","Admin feedback: "),
+    submitted: L("已送出,等待管理人審核。","已送出,等待管理人审核。","提出しました。審査をお待ちください。","Submitted — awaiting review."),
+    approve: L("核可","核可","承認","Approve"),
+    reject: L("退回","退回","却下","Reject"),
+    noteAsk: L("輸入現場備註/退件原因(可留空):","输入现场备注/退件原因(可留空):","現場メモ/却下理由(任意):","On-site note / reason (optional):"),
+    qrBtn: L("產生 QR","生成 QR","QR生成","Make QR"),
+    qrTitle: L("展商專屬 QR","展商专属 QR","出展者専用QR","Exhibitor QR"),
+    qrHint: L("展商掃此碼即進入專屬上傳入口","展商扫此码即进入专属上传入口","スキャンで専用入口へ","Scan to open the exhibitor portal"),
+    exportCsv: L("匯出 CSV","导出 CSV","CSV出力","Export CSV"),
+    printPdf: L("列印 / PDF","打印 / PDF","印刷 / PDF","Print / PDF"),
+    close: L("關閉","关闭","閉じる","Close")
   }
 };

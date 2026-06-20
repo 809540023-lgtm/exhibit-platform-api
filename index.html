@@ -112,6 +112,19 @@
     .wrap{padding:0 var(--sp-4)}
   }
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  /* Phase③ */
+  .formgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:var(--sp-3) var(--sp-4);margin-bottom:var(--sp-3)}
+  .toolbar{display:flex;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-3)}
+  #modal{position:fixed;inset:0;background:rgba(28,25,23,.45);display:none;align-items:center;justify-content:center;z-index:80;padding:var(--sp-4)}
+  #modal.open{display:flex}
+  .modalbox{background:#fff;border-radius:var(--r-lg);padding:var(--sp-5);max-width:360px;width:100%;box-shadow:var(--sh-3)}
+  .modalbox svg{width:200px;height:200px}
+  @media print{
+    header,footer,.langsw,#rolebox,.tabs,.toolbar,.crumbs,#botFab,#botPanel,form.auth,.note{display:none!important}
+    .view:not(.active){display:none}.view.active{display:block!important}
+    body{background:#fff}.card,.pcard{box-shadow:none;border:1px solid #ccc;break-inside:avoid}
+    .wrap{max-width:100%}a[href]:after{content:""}
+  }
   /* chatbot */
   #botFab{position:fixed;right:22px;bottom:22px;width:56px;height:56px;border-radius:50%;border:none;background:var(--cherry);color:#fff;font-size:26px;cursor:pointer;box-shadow:0 8px 22px rgba(153,0,17,.35);z-index:60}
   #botPanel{position:fixed;right:22px;bottom:88px;width:340px;max-width:calc(100vw - 28px);height:480px;max-height:calc(100vh - 130px);background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.18);z-index:60;display:none;flex-direction:column;overflow:hidden}
@@ -260,13 +273,44 @@ async function renderBuyer(){
   const list = cards || `<div class="empty"><span class="ei">🔒</span>${t(L('目前沒有開放給你的授權商品','目前没有开放给你的授权商品','許可された商品はまだありません','No products authorized to you yet.'))}</div>`;
   $('v-buyer').innerHTML=`<div class="crumbs"><span onclick="go('home')">${t(I18N.back)}</span> / 📋</div>
     <div class="portalhead"><h2>📋 ${t(I18N.entries[1].title)} · ${USER.client_id||'-'}</h2></div>
+    <div class="toolbar"><button class="btn ghost sm" onclick="exportCsv('buyer')">⬇ ${t(I18N.p3.exportCsv)}</button><button class="btn ghost sm" onclick="printReport('buyer')">🖨 ${t(I18N.p3.printPdf)}</button></div>
     <div class="plist">${list}</div>`;
 }
 
 async function renderExhibitor(){
   if(!USER||USER.role!=='exhibitor'){ $('v-exhibitor').innerHTML=`<div class="crumbs"><span onclick="go('home')">${t(I18N.back)}</span> / 🏭</div><div class="portalhead"><h2>🏭 ${t(I18N.entries[0].title)}</h2></div>${authForm('exhibitor')}`; return; }
+  const P=I18N.p3;
+  const r=await api('/api/exhibitor/products');
+  const statusBadge=s=>s==='approved'?`<span class="badge ok">${t(P.statusApproved)}</span>`:s==='rejected'?`<span class="badge no">${t(P.statusRejected)}</span>`:`<span class="badge cond">${t(P.statusPending)}</span>`;
+  const mine=(r.body||[]).map(p=>`<tr><td><b>${t(p.name)}</b></td><td>${t(p.consumer.price)}</td><td>${statusBadge(p.status)}</td>
+    <td>${p.fieldNote?`<span style="color:var(--warn)">${t(I18N.p3.feedback)}${t(p.fieldNote)}</span>`:'—'}</td></tr>`).join('');
+  const fld=(id,lbl,ph)=>`<label>${lbl}<input id="${id}" placeholder="${ph||''}"></label>`;
   $('v-exhibitor').innerHTML=`<div class="crumbs"><span onclick="go('home')">${t(I18N.back)}</span> / 🏭</div>
-    <div class="portalhead"><h2>🏭 ${t(I18N.entries[0].title)}</h2></div><div class="note">${t(I18N.exhibitorNote)}</div>`;
+    <div class="portalhead"><h2>🏭 ${t(I18N.entries[0].title)}</h2><div class="langnote">${t(I18N.entries[0].tag||'')}</div></div>
+    <div class="card navy"><h4>📤 ${t(P.newProduct)}</h4>
+      <div id="exMsg"></div>
+      <form class="auth" style="max-width:100%" onsubmit="return submitExh(event)">
+        <div class="formgrid">
+          ${fld('xName',t(P.fName),'')}${fld('xCategory',t(P.fCategory),'')}${fld('xBooth',t(P.fBooth),'E-12')}
+          ${fld('xPrice',t(P.fPrice),'¥')}${fld('xMoq',t(I18N.moq),'')}${fld('xWholesale',t(I18N.wholesale),'')}
+          ${fld('xExport',t(I18N.exportL),'')}${fld('xOem',t(I18N.oem),'')}${fld('xOrigin',t(P.fOrigin),'')}
+        </div>
+        <label>${t(P.fStory)}<textarea id="xStory" rows="2"></textarea></label>
+        <label>${t(P.fFeature)}<input id="xFeature"></label>
+        <button class="btn navy" type="submit">${t(P.submit)}</button>
+      </form></div>
+    <div class="card"><h4>📋 ${t(P.myUploads)}</h4>
+      ${mine?`<div class="tablewrap"><table><thead><tr><th>${t(P.fName)}</th><th>${t(P.fPrice)}</th><th>${t(I18N.status)}</th><th>${t(P.feedback).replace(':','').replace('：','')}</th></tr></thead><tbody>${mine}</tbody></table></div>`:`<div class="empty"><span class="ei">📦</span>—</div>`}
+    </div>`;
+}
+async function submitExh(e){ e.preventDefault();
+  const g=id=>{const el=document.getElementById(id);return el?el.value.trim():''};
+  if(!g('xName')){ return false; }
+  const body={name:g('xName'),category:g('xCategory'),booth:g('xBooth'),price:g('xPrice'),moq:g('xMoq'),wholesale:g('xWholesale'),exportT:g('xExport'),oem:g('xOem'),origin:g('xOrigin'),story:g('xStory'),feature:g('xFeature')};
+  const r=await api('/api/exhibitor/products',{method:'POST',body:JSON.stringify(body)});
+  if(r.status===200){ $('exMsg').innerHTML=`<div class="msg ok">${t(I18N.p3.submitted)}</div>`; setTimeout(renderExhibitor,700); }
+  else { $('exMsg').innerHTML=`<div class="msg err">${(r.body&&r.body.error)||'error'}</div>`; }
+  return false;
 }
 
 let adminTab='products';
@@ -276,14 +320,20 @@ async function renderAdmin(){
     return; }
   const tabs=[['products',I18N.tabProducts],['users',I18N.tabUsers],['audit',I18N.tabAudit]];
   let body='';
+  let toolbar='';
+  const P=I18N.p3;
+  const stB=s=>s==='approved'?`<span class="badge ok">${t(P.statusApproved)}</span>`:s==='rejected'?`<span class="badge no">${t(P.statusRejected)}</span>`:`<span class="badge cond">${t(P.statusPending)}</span>`;
   const wrap = (head, rows) => rows ? `<div class="tablewrap"><table>${head}<tbody>${rows}</tbody></table></div>` : `<div class="empty"><span class="ei">📭</span>—</div>`;
   if(adminTab==='products'){
     const r=await api('/api/admin/products');
-    const head=`<thead><tr><th>${t(I18N.entries[0].title)}</th><th class="num">${t(I18N.wholesale)}</th><th>${t(I18N.internal)}</th><th>${t(I18N.grantedTo)}</th></tr></thead>`;
-    const rows=(r.body||[]).map(p=>`<tr><td><b>${t(p.name)}</b>${p.reviewed?'':' <span class="pill warn">●</span>'}</td>
+    toolbar=`<div class="toolbar"><button class="btn ghost sm" onclick="exportCsv('admin')">⬇ ${t(P.exportCsv)}(L3)</button><button class="btn ghost sm" onclick="printReport('admin')">🖨 ${t(P.printPdf)}</button></div>`;
+    const head=`<thead><tr><th>${t(I18N.entries[0].title)}</th><th>${t(I18N.status)}</th><th class="num">${t(I18N.wholesale)}</th><th>${t(I18N.internal)}</th><th>${t(I18N.grantedTo)}</th><th></th></tr></thead>`;
+    const rows=(r.body||[]).map(p=>`<tr><td><b>${t(p.name)}</b></td>
+        <td>${stB(p.status)}</td>
         <td class="num"><b style="color:var(--cherry)">${t(p.b2b.wholesale)}</b></td>
-        <td><div class="anote">${t(p.admin.verbal)}｜${t(p.admin.risk)}｜興趣:${(p.admin.interested||[]).join(',')}</div></td>
-        <td>${(p.grantedTo||[]).map(c=>`<span class="pill lv">${c}</span>`).join('')||'—'}</td></tr>`).join('');
+        <td><div class="anote">${t(p.admin.verbal)}｜${t(p.admin.risk)}｜興趣:${(p.admin.interested||[]).join(',')}${p.fieldNote?'｜📝'+t(p.fieldNote):''}</div></td>
+        <td>${(p.grantedTo||[]).map(c=>`<span class="pill lv">${c}</span>`).join('')||'—'}</td>
+        <td style="white-space:nowrap">${p.status==='pending'?`<button class="btn sm" onclick="reviewProduct('${p.id}','approve')">${t(P.approve)}</button> <button class="btn ghost sm" onclick="reviewProduct('${p.id}','reject')">${t(P.reject)}</button>`:`<button class="btn ghost sm" onclick="showQr('${p.exhibitorId}')">${t(P.qrBtn)}</button>`}</td></tr>`).join('');
     body=wrap(head,rows);
   } else if(adminTab==='users'){
     const r=await api('/api/admin/users');
@@ -301,9 +351,47 @@ async function renderAdmin(){
   $('v-admin').innerHTML=`<div class="crumbs"><span onclick="go('home')">${t(I18N.back)}</span> / 🛠️</div>
     <div class="portalhead"><h2>🛠️ ${t(I18N.entries[3].title)}</h2></div>
     <div class="tabs">${tabs.map(([k,lbl])=>`<button class="${k===adminTab?'on':''}" onclick="adminTab='${k}';render()">${t(lbl)}</button>`).join('')}</div>
-    <div class="card">${body}</div>`;
+    <div class="card">${toolbar}${body}</div>`;
 }
 async function userAction(id,action){ await api(`/api/admin/users/${id}/${action}`,{method:'POST'}); render(); }
+
+/* ---- Phase③: 審核 / QR / 匯出 / 列印 ---- */
+async function reviewProduct(id,action){
+  let note=null;
+  if(action==='reject'||action==='approve'){
+    const txt=prompt(t(I18N.p3.noteAsk));
+    if(txt===null && action==='reject') return; // 取消退回
+    if(txt) note={tc:txt,sc:txt,ja:txt,en:txt};
+  }
+  await api(`/api/admin/products/${id}/${action}`,{method:'POST',body:JSON.stringify({fieldNote:note})});
+  render();
+}
+function showModal(html){
+  let m=document.getElementById('modal');
+  if(!m){ m=document.createElement('div'); m.id='modal'; document.body.appendChild(m); }
+  m.innerHTML=`<div class="modalbox">${html}<div style="text-align:right;margin-top:12px"><button class="btn ghost sm" onclick="closeModal()">${t(I18N.p3.close)}</button></div></div>`;
+  m.classList.add('open'); m.onclick=e=>{if(e.target===m)closeModal()};
+}
+function closeModal(){ const m=document.getElementById('modal'); if(m)m.classList.remove('open'); }
+async function showQr(exhibitorId){
+  showModal(`<h4 style="color:var(--cherry)">${t(I18N.p3.qrTitle)} · ${exhibitorId}</h4><div class="empty">${t(I18N.loading)}</div>`);
+  const r=await api('/api/admin/qr/'+encodeURIComponent(exhibitorId));
+  if(r.status===200){
+    showModal(`<h4 style="color:var(--cherry)">${t(I18N.p3.qrTitle)} · ${exhibitorId}</h4>
+      <div style="text-align:center">${r.body.svg}</div>
+      <p style="font-size:12px;color:var(--mute);text-align:center;margin-top:8px">${t(I18N.p3.qrHint)}</p>
+      <p style="font-size:11px;word-break:break-all;color:var(--navy);text-align:center">${r.body.url}</p>`);
+  } else showModal(`<div class="msg err">QR error</div>`);
+}
+async function exportCsv(role){
+  const path = role==='admin'?'/api/admin/export.csv':'/api/buyer/export.csv';
+  const r=await fetch(path+'?lang='+LANG,{headers:TOKEN?{authorization:'Bearer '+TOKEN}:{}});
+  if(!r.ok){ alert('export failed: '+r.status); return; }
+  const blob=await r.blob(); const u=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=u; a.download=(role==='admin'?'admin_products':'my_products')+'.csv'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(u),1500);
+}
+function printReport(){ window.print(); }
 
 async function render(){
   ['home','exhibitor','buyer','consumer','admin'].forEach(v=>$('v-'+v).classList.toggle('active',v===VIEW));
